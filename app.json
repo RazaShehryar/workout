@@ -30,12 +30,11 @@
     "plugins": [
       "expo-router",
       [
-        "react-native-health",
+       "@kingstinct/react-native-healthkit",
         {
-          "isClinicalDataEnabled": true,
-          "healthSharePermission": "Custom health share permission",
-          "healthUpdatePermission": "Custom health update permission",
-          "healthClinicalDescription": "Custom health share permission for clinical data"
+        "NSHealthShareUsageDescription": "Your own custom usage description",
+        "NSHealthUpdateUsageDescription": true,
+        "background": true
         }
       ]
     ],
