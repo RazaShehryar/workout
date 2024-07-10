@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import AppleHealthKit, { HealthActivityOptions, HealthKitPermissions } from "react-native-health";
 import Modal from "react-native-modal";
+import { Pedometer } from "expo-sensors";
 
 const permissions = {
   permissions: {
@@ -19,6 +20,7 @@ const App = () => {
   const [distance, setDistance] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [latestWorkout, setLatestWorkout] = useState<WorkoutData | null>(null);
+  const [currentStepCount, setCurrentStepCount] = useState(0);
 
   const fetchLatestWorkout = () => {
     getLatestWorkout((data) => {
@@ -43,6 +45,25 @@ const App = () => {
       console.log("Healthkit initialized: ", results);
     });
     fetchLatestWorkout();
+    let subscription: Pedometer.Subscription;
+    (async () => {
+      try {
+        const isAvailable = await Pedometer.isAvailableAsync();
+        console.log("is available ", isAvailable);
+        if (!isAvailable) {
+          return;
+        }
+        const pedometerPermission = await Pedometer.requestPermissionsAsync();
+        if (pedometerPermission.granted) {
+          subscription = Pedometer.watchStepCount((result) => {
+            setCurrentStepCount(result.steps);
+          });
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    })();
+    // return () => subscription?.remove();
   }, []);
 
   const saveStepsToHealthKit = () => {
