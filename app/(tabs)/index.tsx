@@ -9,7 +9,11 @@ import { Pedometer } from "expo-sensors";
 
 const permissions = {
   permissions: {
-    write: [AppleHealthKit.Constants.Permissions.Workout],
+    write: [
+      AppleHealthKit.Constants.Permissions.Workout,
+      AppleHealthKit.Constants.Permissions.Steps,
+      AppleHealthKit.Constants.Permissions.StepCount,
+    ],
   },
 } as HealthKitPermissions;
 
@@ -20,7 +24,7 @@ const App = () => {
   const [distance, setDistance] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [latestWorkout, setLatestWorkout] = useState<WorkoutData | null>(null);
-  const [currentStepCount, setCurrentStepCount] = useState(0);
+  const [currentStepCount, setCurrentStepCount] = useState(100);
 
   const fetchLatestWorkout = () => {
     getLatestWorkout((data) => {
@@ -67,29 +71,46 @@ const App = () => {
   }, []);
 
   const saveStepsToHealthKit = () => {
-    const options: Record<string, unknown> = {
+    const startDate = new Date().toISOString();
+    const endDate = addMinutesToDate(new Date(), 60).toISOString();
+
+    let options: Record<string, unknown> = {
       type: capitalizeFirstLetter(type),
-      startDate: new Date().toISOString(),
-      endDate: addMinutesToDate(new Date(), 60).toISOString(),
+      startDate,
+      endDate,
       energyBurned: Number(calories),
       energyBurnedUnit: "calorie",
       distance: Number(distance) * 1000,
       distanceUnit: "meter",
     };
 
-    AppleHealthKit.saveWorkout(options as unknown as HealthActivityOptions, (err, results) => {
+    const stepsData = { value: currentStepCount, startDate, endDate };
+
+    let steps = currentStepCount;
+
+    AppleHealthKit.saveSteps(stepsData, (err, results) => {
       if (err) {
+        steps = 0;
         console.log("error saving steps to Healthkit: ", err);
         return;
       }
+      console.log("Steps saved to Healthkit: ", results.toString());
+    });
+
+    AppleHealthKit.saveWorkout(options as unknown as HealthActivityOptions, (err, results) => {
+      if (err) {
+        console.log("error saving workout to Healthkit: ", err);
+        return;
+      }
       const id = results.toString();
-      options.id = id;
-      console.log("Steps saved to Healthkitt: ", results.toString());
+      options = { ...options, id, steps };
+
       if (id) {
         insertData(options as unknown as WorkoutData, fetchLatestWorkout);
         setDistance("");
         setCalories("");
         setType("walking");
+        setCurrentStepCount(100);
         setModalVisible(false);
       }
     });
@@ -109,6 +130,7 @@ const App = () => {
           <Text>{`End date time: ${latestWorkout.endDate}`}</Text>
           <Text>{`Distance covered: ${Math.floor(latestWorkout.distance / 1000)} km`}</Text>
           <Text>{`Energy burnt: ${Math.floor(latestWorkout.energyBurned)} calories`}</Text>
+          <Text>{`Steps: ${latestWorkout.steps}`}</Text>
           <Text>{`Type: ${latestWorkout.type}`}</Text>
         </View>
       ) : null}

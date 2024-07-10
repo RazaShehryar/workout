@@ -11,6 +11,7 @@ export interface WorkoutData {
   energyBurnedUnit: string;
   distance: number;
   distanceUnit: string;
+  steps: number;
 }
 
 export const createTable = (): void => {
@@ -24,7 +25,8 @@ export const createTable = (): void => {
         energyBurned REAL,
         energyBurnedUnit TEXT,
         distance REAL,
-        distanceUnit TEXT
+        distanceUnit TEXT,
+        steps REAL
       );`,
       [],
       () => {
@@ -39,11 +41,12 @@ export const createTable = (): void => {
 };
 
 export const insertData = (data: WorkoutData, callback?: () => void): void => {
-  const { id, type, startDate, endDate, energyBurned, energyBurnedUnit, distance, distanceUnit } = data;
+  const { id, type, startDate, endDate, energyBurned, energyBurnedUnit, distance, distanceUnit, steps } = data;
+  console.log("this is the data ", data);
   db.transaction((tx) => {
     tx.executeSql(
-      "INSERT INTO workout (id, type, startDate, endDate, energyBurned, energyBurnedUnit, distance, distanceUnit) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
-      [id, type, startDate, endDate, energyBurned, energyBurnedUnit, distance, distanceUnit],
+      "INSERT INTO workout (id, type, startDate, endDate, energyBurned, energyBurnedUnit, distance, distanceUnit, steps) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);",
+      [id, type, startDate, endDate, energyBurned, energyBurnedUnit, distance, distanceUnit, steps],
       () => {
         callback?.();
         console.log("Data inserted successfully");
