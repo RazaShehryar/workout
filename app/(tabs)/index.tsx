@@ -1,5 +1,10 @@
-import { WorkoutData, createTable, getLatestWorkout, insertData } from "@/database";
-import { addMinutesToDate, capitalizeFirstLetter, locations, workoutType } from "@/utils";
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Button, Text, TextInput, StyleSheet } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import Modal from 'react-native-modal';
+import BottomSheet from '@gorhom/bottom-sheet';
+import { WorkoutData, createTable, getLatestWorkout, insertData } from '@/database';
+import { addMinutesToDate, capitalizeFirstLetter, locations, workoutType } from '@/utils';
 import HealthKit, {
   HKQuantityTypeIdentifier,
   HKUnits,
@@ -7,28 +12,26 @@ import HealthKit, {
   HKWorkoutTypeIdentifier,
   UnitOfEnergy,
   UnitOfLength,
-} from "@kingstinct/react-native-healthkit";
-import { Picker } from "@react-native-picker/picker";
-import React, { useEffect, useState } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
-import Modal from "react-native-modal";
+} from '@kingstinct/react-native-healthkit';
 
 const App = () => {
   const [isModalVisible, setModalVisible] = useState(false);
-  const [type, setType] = useState("walking");
-  const [calories, setCalories] = useState("");
-  const [distance, setDistance] = useState("");
+  const [type, setType] = useState('walking');
+  const [calories, setCalories] = useState('');
+  const [distance, setDistance] = useState('');
   const [isReady, setIsReady] = useState(false);
   const [latestWorkout, setLatestWorkout] = useState<WorkoutData | null>(null);
   const [currentStepCount, setCurrentStepCount] = useState(100);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = ['1%', '50%', '90%'];
 
   const fetchLatestWorkout = () => {
     getLatestWorkout((data) => {
       if (data) {
-        console.log("this is the data ", data);
+        console.log('this is the data ', data);
         setLatestWorkout(data);
       } else {
-        console.log("No workout data found");
+        console.log('No workout data found');
       }
     });
   };
@@ -36,7 +39,6 @@ const App = () => {
   useEffect(() => {
     createTable();
     fetchLatestWorkout();
-    // let subscription: Pedometer.Subscription;
     (async () => {
       try {
         const isHealthDataAvailable = await HealthKit.isHealthDataAvailable();
@@ -57,23 +59,10 @@ const App = () => {
         if (result) {
           setIsReady(true);
         }
-        // const isAvailable = await Pedometer.isAvailableAsync();
-        // console.log("is available ", isAvailable);
-        // if (!isAvailable) {
-        //   return;
-        // }
-        // const pedometerPermission = await Pedometer.requestPermissionsAsync();
-        // if (pedometerPermission.granted) {
-        //   subscription = Pedometer.watchStepCount((result) => {
-        //     setCurrentStepCount(result.steps);
-        //   });
-        // }
       } catch (e) {
         console.log(e);
       }
     })();
-
-    // return () => subscription?.remove();
   }, []);
 
   const saveStepsToHealthKit = async () => {
@@ -86,9 +75,9 @@ const App = () => {
         startDate: start.toISOString(),
         endDate: end.toISOString(),
         energyBurned: Number(calories),
-        energyBurnedUnit: "calorie",
+        energyBurnedUnit: 'calorie',
         distance: Number(distance) * 1000,
-        distanceUnit: "meter",
+        distanceUnit: 'meter',
         steps: currentStepCount,
       };
 
@@ -108,7 +97,7 @@ const App = () => {
       );
 
       const userDistance = await HealthKit.saveQuantitySample(
-        type === "cycling" ? HKQuantityTypeIdentifier.distanceCycling : HKQuantityTypeIdentifier.distanceWalkingRunning,
+        type === 'cycling' ? HKQuantityTypeIdentifier.distanceCycling : HKQuantityTypeIdentifier.distanceWalkingRunning,
         UnitOfLength.Meter,
         Number(distance) * 1000,
         { start, end }
@@ -126,14 +115,14 @@ const App = () => {
       const workoutResult = await HealthKit.saveWorkoutSample(workoutType(type), [], new Date(), workoutOptions);
 
       if (workoutResult) {
-        console.log("workout created: ", workoutResult);
+        console.log('workout created: ', workoutResult);
         const workoutRouteResult = await HealthKit.saveWorkoutRoute(workoutResult, locations);
         if (workoutRouteResult) {
-          console.log("workout route created");
+          console.log('workout route created');
           insertData({ ...options, id: workoutResult } as unknown as WorkoutData, fetchLatestWorkout);
-          setDistance("");
-          setCalories("");
-          setType("walking");
+          setDistance('');
+          setCalories('');
+          setType('walking');
           setCurrentStepCount(100);
           setModalVisible(false);
         }
@@ -143,6 +132,10 @@ const App = () => {
     }
   };
 
+  const handleOpenMusicSheet = () => {
+    bottomSheetRef.current?.expand();
+  };
+
   if (!isReady) {
     return null;
   }
@@ -150,9 +143,10 @@ const App = () => {
   return (
     <View style={styles.container}>
       <Button title="Add Workout" onPress={() => setModalVisible(true)} />
+      <Button title="Open Music" onPress={handleOpenMusicSheet} />
       {latestWorkout ? (
         <View style={{ gap: 10 }}>
-          <Text style={{ fontWeight: "600" }}>Workout details:</Text>
+          <Text style={{ fontWeight: '600' }}>Workout details:</Text>
           <Text>{`Start date time: ${latestWorkout.startDate}`}</Text>
           <Text>{`End date time: ${latestWorkout.endDate}`}</Text>
           <Text>{`Distance covered: ${Math.floor(latestWorkout.distance / 1000)} km`}</Text>
@@ -191,6 +185,17 @@ const App = () => {
           <Button title="Cancel" onPress={() => setModalVisible(false)} />
         </View>
       </Modal>
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        style={{ borderRadius: 10 }}
+      >
+        <View style={styles.bottomSheetContent}>
+          <Text style={styles.bottomSheetText}>Music Content</Text>
+          {/* Add your music player content here */}
+        </View>
+      </BottomSheet>
     </View>
   );
 };
@@ -198,20 +203,29 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
   },
   input: {
     height: 40,
-    borderColor: "gray",
+    borderColor: 'gray',
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,
+  },
+  bottomSheetContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    height: 450,
+  },
+  bottomSheetText: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
 });
 
