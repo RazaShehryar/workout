@@ -9,7 +9,6 @@ import HealthKit, {
   UnitOfLength,
 } from "@kingstinct/react-native-healthkit";
 import { Picker } from "@react-native-picker/picker";
-import { Pedometer } from "expo-sensors";
 import React, { useEffect, useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import Modal from "react-native-modal";
@@ -37,7 +36,7 @@ const App = () => {
   useEffect(() => {
     createTable();
     fetchLatestWorkout();
-    let subscription: Pedometer.Subscription;
+    // let subscription: Pedometer.Subscription;
     (async () => {
       try {
         const isHealthDataAvailable = await HealthKit.isHealthDataAvailable();
@@ -58,23 +57,23 @@ const App = () => {
         if (result) {
           setIsReady(true);
         }
-        const isAvailable = await Pedometer.isAvailableAsync();
-        console.log("is available ", isAvailable);
-        if (!isAvailable) {
-          return;
-        }
-        const pedometerPermission = await Pedometer.requestPermissionsAsync();
-        if (pedometerPermission.granted) {
-          subscription = Pedometer.watchStepCount((result) => {
-            setCurrentStepCount(result.steps);
-          });
-        }
+        // const isAvailable = await Pedometer.isAvailableAsync();
+        // console.log("is available ", isAvailable);
+        // if (!isAvailable) {
+        //   return;
+        // }
+        // const pedometerPermission = await Pedometer.requestPermissionsAsync();
+        // if (pedometerPermission.granted) {
+        //   subscription = Pedometer.watchStepCount((result) => {
+        //     setCurrentStepCount(result.steps);
+        //   });
+        // }
       } catch (e) {
         console.log(e);
       }
     })();
 
-    return () => subscription?.remove();
+    // return () => subscription?.remove();
   }, []);
 
   const saveStepsToHealthKit = async () => {
