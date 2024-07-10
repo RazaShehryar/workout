@@ -34,7 +34,7 @@
         {
         "NSHealthShareUsageDescription": "Your own custom usage description",
         "NSHealthUpdateUsageDescription": true,
-        "background": false
+        "background": true
         }
       ]
     ],
