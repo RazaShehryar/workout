@@ -105,7 +105,7 @@ const App = () => {
 
       const energyBurned = await HealthKit.saveQuantitySample(
         HKQuantityTypeIdentifier.activeEnergyBurned,
-        UnitOfEnergy.SmallCalories,
+        UnitOfEnergy.Kilocalories,
         Number(calories),
         { start, end }
       );
