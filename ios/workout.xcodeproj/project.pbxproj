@@ -173,7 +173,6 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						DevelopmentTeam = 29YUR37CVM;
 						LastSwiftMigration = 1250;
 						ProvisioningStyle = Automatic;
 					};
@@ -345,7 +344,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 29YUR37CVM;
+				DEVELOPMENT_TEAM = 8A38LCD4KS;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -364,7 +363,7 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.workoutx;
+				PRODUCT_BUNDLE_IDENTIFIER = com.linkclicks.workout;
 				PRODUCT_NAME = workout;
 				SWIFT_OBJC_BRIDGING_HEADER = "workout/workout-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -384,7 +383,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 29YUR37CVM;
+				DEVELOPMENT_TEAM = 8A38LCD4KS;
 				INFOPLIST_FILE = workout/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -398,7 +397,7 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.workoutx;
+				PRODUCT_BUNDLE_IDENTIFIER = com.linkclicks.workout;
 				PRODUCT_NAME = workout;
 				SWIFT_OBJC_BRIDGING_HEADER = "workout/workout-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
