@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Button, Text, TextInput, StyleSheet } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import Modal from 'react-native-modal';
-import BottomSheet from '@gorhom/bottom-sheet';
-import { WorkoutData, createTable, getLatestWorkout, insertData } from '@/database';
-import { addMinutesToDate, capitalizeFirstLetter, locations, workoutType } from '@/utils';
+import React, { useState, useRef, useEffect } from "react";
+import { View, Button, Text, TextInput, StyleSheet } from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import Modal from "react-native-modal";
+import BottomSheet from "@gorhom/bottom-sheet";
+import { WorkoutData, createTable, getLatestWorkout, insertData } from "@/database";
+import { addMinutesToDate, capitalizeFirstLetter, locations, workoutType } from "@/utils";
 import HealthKit, {
   HKQuantityTypeIdentifier,
   HKUnits,
@@ -12,26 +12,40 @@ import HealthKit, {
   HKWorkoutTypeIdentifier,
   UnitOfEnergy,
   UnitOfLength,
-} from '@kingstinct/react-native-healthkit';
+} from "@kingstinct/react-native-healthkit";
+import {
+  Auth,
+  Player,
+  MusicKit,
+  useCurrentSong,
+  useIsPlaying,
+  CatalogSearchType,
+  MusicItem,
+} from "@lomray/react-native-apple-music";
 
 const App = () => {
   const [isModalVisible, setModalVisible] = useState(false);
-  const [type, setType] = useState('walking');
-  const [calories, setCalories] = useState('');
-  const [distance, setDistance] = useState('');
+  const [type, setType] = useState("walking");
+  const [calories, setCalories] = useState("");
+  const [distance, setDistance] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [latestWorkout, setLatestWorkout] = useState<WorkoutData | null>(null);
   const [currentStepCount, setCurrentStepCount] = useState(100);
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = ['1%', '50%', '90%'];
+  const snapPoints = ["1%", "50%", "90%"];
+
+  const { song } = useCurrentSong();
+  const { isPlaying } = useIsPlaying();
+
+  console.log(song, isPlaying);
 
   const fetchLatestWorkout = () => {
     getLatestWorkout((data) => {
       if (data) {
-        console.log('this is the data ', data);
+        console.log("this is the data ", data);
         setLatestWorkout(data);
       } else {
-        console.log('No workout data found');
+        console.log("No workout data found");
       }
     });
   };
@@ -45,20 +59,34 @@ const App = () => {
         if (!isHealthDataAvailable) {
           return;
         }
-        const result = await HealthKit.requestAuthorization(
-          [],
-          [
-            HKQuantityTypeIdentifier.distanceCycling,
-            HKQuantityTypeIdentifier.distanceWalkingRunning,
-            HKQuantityTypeIdentifier.stepCount,
-            HKQuantityTypeIdentifier.activeEnergyBurned,
-            HKWorkoutTypeIdentifier,
-            HKWorkoutRouteTypeIdentifier,
-          ]
-        );
-        if (result) {
-          setIsReady(true);
-        }
+        setIsReady(true);
+        // const result = await HealthKit.requestAuthorization(
+        //   [],
+        //   [
+        //     HKQuantityTypeIdentifier.distanceCycling,
+        //     HKQuantityTypeIdentifier.distanceWalkingRunning,
+        //     HKQuantityTypeIdentifier.stepCount,
+        //     HKQuantityTypeIdentifier.activeEnergyBurned,
+        //     HKWorkoutTypeIdentifier,
+        //     HKWorkoutRouteTypeIdentifier,
+        //   ]
+        // );
+        // if (result) {
+        //   setIsReady(true);
+        // }
+        console.log("HERE 1");
+        const authStatus = await Auth.authorize();
+        console.log("Authorization Status:", authStatus);
+        // console.log("HERE 1");
+        console.log("HERE 1");
+        const results = await MusicKit.getTracksFromLibrary();
+
+        console.log("User`s library Results:", results);
+        // await MusicKit.setPlaybackQueue("pl.e35b41bd9acf48aeaddeb51dc91f2f76", MusicItem.PLAYLIST);
+        // Player.play();
+        // const types = [CatalogSearchType.SONGS, CatalogSearchType.ALBUMS]; // Define the types of items you're searching for. The result will contain items among songs/albums
+        // const results = await MusicKit.catalogSearch("Spider man", types);
+        // console.log("Search Results:", results);
       } catch (e) {
         console.log(e);
       }
@@ -75,9 +103,9 @@ const App = () => {
         startDate: start.toISOString(),
         endDate: end.toISOString(),
         energyBurned: Number(calories),
-        energyBurnedUnit: 'calorie',
+        energyBurnedUnit: "calorie",
         distance: Number(distance) * 1000,
-        distanceUnit: 'meter',
+        distanceUnit: "meter",
         steps: currentStepCount,
       };
 
@@ -97,7 +125,7 @@ const App = () => {
       );
 
       const userDistance = await HealthKit.saveQuantitySample(
-        type === 'cycling' ? HKQuantityTypeIdentifier.distanceCycling : HKQuantityTypeIdentifier.distanceWalkingRunning,
+        type === "cycling" ? HKQuantityTypeIdentifier.distanceCycling : HKQuantityTypeIdentifier.distanceWalkingRunning,
         UnitOfLength.Meter,
         Number(distance) * 1000,
         { start, end }
@@ -115,14 +143,14 @@ const App = () => {
       const workoutResult = await HealthKit.saveWorkoutSample(workoutType(type), [], new Date(), workoutOptions);
 
       if (workoutResult) {
-        console.log('workout created: ', workoutResult);
+        console.log("workout created: ", workoutResult);
         const workoutRouteResult = await HealthKit.saveWorkoutRoute(workoutResult, locations);
         if (workoutRouteResult) {
-          console.log('workout route created');
+          console.log("workout route created");
           insertData({ ...options, id: workoutResult } as unknown as WorkoutData, fetchLatestWorkout);
-          setDistance('');
-          setCalories('');
-          setType('walking');
+          setDistance("");
+          setCalories("");
+          setType("walking");
           setCurrentStepCount(100);
           setModalVisible(false);
         }
@@ -146,7 +174,7 @@ const App = () => {
       <Button title="Open Music" onPress={handleOpenMusicSheet} />
       {latestWorkout ? (
         <View style={{ gap: 10 }}>
-          <Text style={{ fontWeight: '600' }}>Workout details:</Text>
+          <Text style={{ fontWeight: "600" }}>Workout details:</Text>
           <Text>{`Start date time: ${latestWorkout.startDate}`}</Text>
           <Text>{`End date time: ${latestWorkout.endDate}`}</Text>
           <Text>{`Distance covered: ${Math.floor(latestWorkout.distance / 1000)} km`}</Text>
@@ -185,12 +213,7 @@ const App = () => {
           <Button title="Cancel" onPress={() => setModalVisible(false)} />
         </View>
       </Modal>
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        style={{ borderRadius: 10 }}
-      >
+      <BottomSheet ref={bottomSheetRef} index={-1} snapPoints={snapPoints} style={{ borderRadius: 10 }}>
         <View style={styles.bottomSheetContent}>
           <Text style={styles.bottomSheetText}>Music Content</Text>
           {/* Add your music player content here */}
@@ -203,29 +226,29 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 20,
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 20,
     borderRadius: 10,
   },
   input: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: "gray",
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,
   },
   bottomSheetContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 20,
     height: 450,
   },
   bottomSheetText: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
 

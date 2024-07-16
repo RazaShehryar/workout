@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.workout"
+      "bundleIdentifier": "com.linkclicks.workout",
+      "infoPlist": {
+        "NSAppleMusicUsageDescription": "Allow to continue"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -30,11 +33,19 @@
     "plugins": [
       "expo-router",
       [
-       "@kingstinct/react-native-healthkit",
+        "@kingstinct/react-native-healthkit",
         {
-        "NSHealthShareUsageDescription": "Your own custom usage description",
-        "NSHealthUpdateUsageDescription": true,
-        "background": true
+          "NSHealthShareUsageDescription": "Your own custom usage description",
+          "NSHealthUpdateUsageDescription": true,
+          "background": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.0"
+          }
         }
       ]
     ],
