@@ -1,10 +1,13 @@
-import React, { useState, useRef, useEffect } from "react";
-import { View, Button, Text, TextInput, StyleSheet } from "react-native";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { View, Button, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, Image } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import Modal from "react-native-modal";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { WorkoutData, createTable, getLatestWorkout, insertData } from "@/database";
 import { addMinutesToDate, capitalizeFirstLetter, locations, workoutType } from "@/utils";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import Ionicons from "@expo/vector-icons/Ionicons";
+
 import HealthKit, {
   HKQuantityTypeIdentifier,
   HKUnits,
@@ -21,23 +24,58 @@ import {
   useIsPlaying,
   CatalogSearchType,
   MusicItem,
+  ISong,
+  AuthStatus,
+  useLocalIsPlaying,
 } from "@lomray/react-native-apple-music";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  Layout,
+  LinearTransition,
+  SlideInLeft,
+  SlideInRight,
+  SlideOutRight,
+} from "react-native-reanimated";
+
+const items = [
+  {
+    title: "Playlists",
+    icon: <Ionicons name="musical-note-outline" size={32} color="red" style={{ paddingBottom: 6 }} />,
+  },
+  {
+    title: "Artists",
+    icon: <Ionicons name="mic-outline" size={32} color="red" style={{ paddingBottom: 6 }} />,
+  },
+  {
+    title: "Albums",
+    icon: <Ionicons name="albums-outline" size={32} color="red" style={{ paddingBottom: 6 }} />,
+  },
+  {
+    title: "Songs",
+    icon: <MaterialIcons name="queue-music" size={32} color="red" style={{ paddingBottom: 6 }} />,
+  },
+];
 
 const App = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [type, setType] = useState("walking");
   const [calories, setCalories] = useState("");
   const [distance, setDistance] = useState("");
+  const [currentState, setCurrentState] = useState("");
   const [isReady, setIsReady] = useState(false);
+  const [songs, setSongs] = useState<ISong[]>([]);
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
+  const [currentlyPlaying, setCurrentlyPlaying] = useState<ISong | null>(null);
   const [latestWorkout, setLatestWorkout] = useState<WorkoutData | null>(null);
   const [currentStepCount, setCurrentStepCount] = useState(100);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = ["1%", "50%", "90%"];
 
   const { song } = useCurrentSong();
-  const { isPlaying } = useIsPlaying();
+  const { isPlaying } = useLocalIsPlaying();
 
-  console.log(song, isPlaying);
+  console.log("this is the song ", isPlaying);
 
   const fetchLatestWorkout = () => {
     getLatestWorkout((data) => {
@@ -74,12 +112,13 @@ const App = () => {
         // if (result) {
         //   setIsReady(true);
         // }
-        const authStatus = await Auth.authorize();
-        console.log("Authorization Status:", authStatus);
+        const result = await Auth.authorize();
+        setAuthStatus(result);
         // console.log("HERE 1");
-        const results = await MusicKit.getUserLibrary();
+        // const results = await MusicKit.setLocalPlaybackQueue("2383407936412471541");
 
-        console.log("User`s library Results:", results);
+        // console.log("User`s library Results:", results);
+
         // await MusicKit.setPlaybackQueue("pl.e35b41bd9acf48aeaddeb51dc91f2f76", MusicItem.PLAYLIST);
         // Player.play();
         // const types = [CatalogSearchType.SONGS, CatalogSearchType.ALBUMS]; // Define the types of items you're searching for. The result will contain items among songs/albums
@@ -162,6 +201,60 @@ const App = () => {
     bottomSheetRef.current?.expand();
   };
 
+  useEffect(() => {
+    (async () => {
+      if (currentState === "Songs") {
+        const result = await MusicKit.getUserLibrarySongs();
+        if (result) {
+          setSongs(result.items);
+        }
+      }
+    })();
+  }, [currentState]);
+
+  const playSong = async (item: ISong) => {
+    if (item.localId) {
+      setCurrentlyPlaying(item);
+      await MusicKit.setLocalPlaybackQueue(item.localId);
+    }
+  };
+
+  const renderItem = useCallback(
+    ({ item }: { item: ISong }) => (
+      <TouchableOpacity
+        onPress={() => playSong(item)}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+        }}>
+        <Image
+          borderRadius={10}
+          width={50}
+          height={50}
+          source={{
+            uri:
+              item.artworkUrl ||
+              "https://arthurmillerfoundation.org/wp-content/uploads/2018/06/default-placeholder.png",
+          }}
+        />
+
+        <View style={{ flex: 1 }}>
+          <Text numberOfLines={1} style={{ fontWeight: "500", fontSize: 18 }}>
+            {item.title}
+          </Text>
+          {item.artistName ? (
+            <Text style={{ fontWeight: "400", fontSize: 14, color: "gray" }}>{item.artistName}</Text>
+          ) : null}
+          <View style={{ height: 1, width: "100%", backgroundColor: "#d3d3d3", marginTop: 6 }} />
+        </View>
+      </TouchableOpacity>
+    ),
+    []
+  );
+
+  const keyExtractor = useCallback((item: ISong) => item.id, []);
+
   if (!isReady) {
     return null;
   }
@@ -213,7 +306,131 @@ const App = () => {
       </Modal>
       <BottomSheet ref={bottomSheetRef} index={-1} snapPoints={snapPoints} style={{ borderRadius: 10 }}>
         <View style={styles.bottomSheetContent}>
-          <Text style={styles.bottomSheetText}>Music Content</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            {currentState ? (
+              <Ionicons
+                name="arrow-back"
+                size={24}
+                color="black"
+                onPress={() => setCurrentState("")}
+                suppressHighlighting
+              />
+            ) : (
+              <View style={{ flex: 0.1 }} />
+            )}
+            <Text style={styles.bottomSheetText}>{currentState || "Library"}</Text>
+            <View style={{ flex: 0.1 }} />
+          </View>
+          <View style={{ marginTop: 50, gap: 30 }}>
+            {currentState === "Songs" ? (
+              <Animated.View
+                key="fede0"
+                entering={SlideInRight}
+                exiting={SlideOutRight}
+                layout={LinearTransition.duration(250)}
+                style={{ flexGrow: 1 }}>
+                <FlatList
+                  contentContainerStyle={{ gap: 10, paddingBottom: 125 }}
+                  data={songs}
+                  renderItem={renderItem}
+                  keyExtractor={keyExtractor}
+                />
+                {currentlyPlaying ? (
+                  <View
+                    style={{
+                      width: "100%",
+                      position: "absolute",
+                      bottom: 30,
+                      zIndex: 10,
+                      borderRadius: 10,
+                      padding: 10,
+                      backgroundColor: "#d3d3d3",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <Image
+                        borderRadius={10}
+                        width={50}
+                        height={50}
+                        source={{
+                          uri:
+                            currentlyPlaying.artworkUrl ||
+                            "https://arthurmillerfoundation.org/wp-content/uploads/2018/06/default-placeholder.png",
+                        }}
+                      />
+                      <Text numberOfLines={1} style={{ fontWeight: "500", fontSize: 18, flex: 0.9 }}>
+                        {currentlyPlaying.title}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center", gap: 10, position: "absolute", right: 10 }}>
+                      {isPlaying ? (
+                        <Animated.View
+                          key="fede1"
+                          entering={FadeIn}
+                          exiting={FadeOut}
+                          layout={LinearTransition.duration(250)}>
+                          <Ionicons
+                            name="pause"
+                            size={24}
+                            color="black"
+                            onPress={Player.pauseLocal}
+                            suppressHighlighting
+                          />
+                        </Animated.View>
+                      ) : (
+                        <Animated.View
+                          key="fede2" // add this
+                          entering={FadeIn}
+                          exiting={FadeOut}
+                          layout={LinearTransition.duration(250)}>
+                          <Ionicons
+                            name="play"
+                            size={24}
+                            color="black"
+                            onPress={Player.playLocal}
+                            suppressHighlighting
+                          />
+                        </Animated.View>
+                      )}
+
+                      <Ionicons name="play-forward" size={24} color="black" onPress={Player.skipLocalToNextEntry} />
+                    </View>
+                  </View>
+                ) : null}
+              </Animated.View>
+            ) : (
+              <Animated.View
+                key="fede4"
+                entering={SlideInLeft}
+                exiting={SlideOutRight}
+                style={{ gap: 30 }}
+                layout={LinearTransition.duration(250)}>
+                {items.map((item) => (
+                  <TouchableOpacity
+                    onPress={() => setCurrentState(item.title)}
+                    key={item.title}
+                    style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      {item.icon}
+                      <View style={{ borderBottomWidth: 1, borderBottomColor: "red", paddingBottom: 6, width: "100%" }}>
+                        <Text style={{ fontWeight: "500", fontSize: 24 }}>{item.title}</Text>
+                      </View>
+                    </View>
+                    <MaterialIcons
+                      name="chevron-right"
+                      size={24}
+                      color="gray"
+                      style={{ paddingBottom: 6, position: "absolute", right: 0 }}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </Animated.View>
+            )}
+          </View>
           {/* Add your music player content here */}
         </View>
       </BottomSheet>
@@ -242,7 +459,7 @@ const styles = StyleSheet.create({
   bottomSheetContent: {
     backgroundColor: "white",
     padding: 20,
-    height: 450,
+    flex: 1,
   },
   bottomSheetText: {
     fontSize: 24,
