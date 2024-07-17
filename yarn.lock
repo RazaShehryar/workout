@@ -2064,11 +2064,11 @@ __metadata:
 
 "@lomray/react-native-apple-music@patch:@lomray/react-native-apple-music@npm%3A1.2.1#./.yarn/patches/@lomray-react-native-apple-music-npm-1.2.1-304c66fad1.patch::locator=workout%40workspace%3A.":
   version: 1.2.1
-  resolution: "@lomray/react-native-apple-music@patch:@lomray/react-native-apple-music@npm%3A1.2.1#./.yarn/patches/@lomray-react-native-apple-music-npm-1.2.1-304c66fad1.patch::version=1.2.1&hash=b43212&locator=workout%40workspace%3A."
+  resolution: "@lomray/react-native-apple-music@patch:@lomray/react-native-apple-music@npm%3A1.2.1#./.yarn/patches/@lomray-react-native-apple-music-npm-1.2.1-304c66fad1.patch::version=1.2.1&hash=6dd23b&locator=workout%40workspace%3A."
   peerDependencies:
     react: "*"
     react-native: ">=0.61"
-  checksum: 87ad521638d9f86a871d6e0667c09c4d7cb8bd73de7f851ed309069c27360d7a6fffb0ea8af20d35d175b22ffebe018696ed6ee6093077f0d30635fb98114bea
+  checksum: 0b3fb1dae99817451be8bf0fde06e18101f8fbb8fe9edce0adc04a20ebfe27155f9cb9e5770a1ea6fb835edbc3bc48cc863566c90c113c5edd7a81ef1e59eda9
   languageName: node
   linkType: hard
 

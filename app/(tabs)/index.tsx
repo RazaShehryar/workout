@@ -37,6 +37,7 @@ import Animated, {
   SlideInRight,
   SlideOutRight,
 } from "react-native-reanimated";
+import { SongList } from "@/components/SongList";
 
 const items = [
   {
@@ -74,8 +75,6 @@ const App = () => {
 
   const { song } = useCurrentSong();
   const { isPlaying } = useLocalIsPlaying();
-
-  console.log("this is the song ", isPlaying);
 
   const fetchLatestWorkout = () => {
     getLatestWorkout((data) => {
@@ -198,62 +197,22 @@ const App = () => {
   };
 
   const handleOpenMusicSheet = () => {
-    bottomSheetRef.current?.expand();
+    if (authStatus === "authorized") {
+      bottomSheetRef.current?.expand();
+    }
   };
 
   useEffect(() => {
     (async () => {
-      if (currentState === "Songs") {
+      if (currentState === "Songs" && authStatus === "authorized") {
         const result = await MusicKit.getUserLibrarySongs();
+        await MusicKit.setLocalPlaybackQueueAll();
         if (result) {
           setSongs(result.items);
         }
       }
     })();
-  }, [currentState]);
-
-  const playSong = async (item: ISong) => {
-    if (item.localId) {
-      setCurrentlyPlaying(item);
-      await MusicKit.setLocalPlaybackQueue(item.localId);
-    }
-  };
-
-  const renderItem = useCallback(
-    ({ item }: { item: ISong }) => (
-      <TouchableOpacity
-        onPress={() => playSong(item)}
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 10,
-        }}>
-        <Image
-          borderRadius={10}
-          width={50}
-          height={50}
-          source={{
-            uri:
-              item.artworkUrl ||
-              "https://arthurmillerfoundation.org/wp-content/uploads/2018/06/default-placeholder.png",
-          }}
-        />
-
-        <View style={{ flex: 1 }}>
-          <Text numberOfLines={1} style={{ fontWeight: "500", fontSize: 18 }}>
-            {item.title}
-          </Text>
-          {item.artistName ? (
-            <Text style={{ fontWeight: "400", fontSize: 14, color: "gray" }}>{item.artistName}</Text>
-          ) : null}
-          <View style={{ height: 1, width: "100%", backgroundColor: "#d3d3d3", marginTop: 6 }} />
-        </View>
-      </TouchableOpacity>
-    ),
-    []
-  );
-
-  const keyExtractor = useCallback((item: ISong) => item.id, []);
+  }, [currentState, authStatus]);
 
   if (!isReady) {
     return null;
@@ -323,85 +282,7 @@ const App = () => {
           </View>
           <View style={{ marginTop: 50, gap: 30 }}>
             {currentState === "Songs" ? (
-              <Animated.View
-                key="fede0"
-                entering={SlideInRight}
-                exiting={SlideOutRight}
-                layout={LinearTransition.duration(250)}
-                style={{ flexGrow: 1 }}>
-                <FlatList
-                  contentContainerStyle={{ gap: 10, paddingBottom: 125 }}
-                  data={songs}
-                  renderItem={renderItem}
-                  keyExtractor={keyExtractor}
-                />
-                {currentlyPlaying ? (
-                  <View
-                    style={{
-                      width: "100%",
-                      position: "absolute",
-                      bottom: 30,
-                      zIndex: 10,
-                      borderRadius: 10,
-                      padding: 10,
-                      backgroundColor: "#d3d3d3",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                      <Image
-                        borderRadius={10}
-                        width={50}
-                        height={50}
-                        source={{
-                          uri:
-                            currentlyPlaying.artworkUrl ||
-                            "https://arthurmillerfoundation.org/wp-content/uploads/2018/06/default-placeholder.png",
-                        }}
-                      />
-                      <Text numberOfLines={1} style={{ fontWeight: "500", fontSize: 18, flex: 0.9 }}>
-                        {currentlyPlaying.title}
-                      </Text>
-                    </View>
-
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center", gap: 10, position: "absolute", right: 10 }}>
-                      {isPlaying ? (
-                        <Animated.View
-                          key="fede1"
-                          entering={FadeIn}
-                          exiting={FadeOut}
-                          layout={LinearTransition.duration(250)}>
-                          <Ionicons
-                            name="pause"
-                            size={24}
-                            color="black"
-                            onPress={Player.pauseLocal}
-                            suppressHighlighting
-                          />
-                        </Animated.View>
-                      ) : (
-                        <Animated.View
-                          key="fede2" // add this
-                          entering={FadeIn}
-                          exiting={FadeOut}
-                          layout={LinearTransition.duration(250)}>
-                          <Ionicons
-                            name="play"
-                            size={24}
-                            color="black"
-                            onPress={Player.playLocal}
-                            suppressHighlighting
-                          />
-                        </Animated.View>
-                      )}
-
-                      <Ionicons name="play-forward" size={24} color="black" onPress={Player.skipLocalToNextEntry} />
-                    </View>
-                  </View>
-                ) : null}
-              </Animated.View>
+              <SongList songs={songs} />
             ) : (
               <Animated.View
                 key="fede4"
