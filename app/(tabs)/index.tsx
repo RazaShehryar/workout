@@ -74,12 +74,10 @@ const App = () => {
         // if (result) {
         //   setIsReady(true);
         // }
-        console.log("HERE 1");
         const authStatus = await Auth.authorize();
         console.log("Authorization Status:", authStatus);
         // console.log("HERE 1");
-        console.log("HERE 1");
-        const results = await MusicKit.getTracksFromLibrary();
+        const results = await MusicKit.getUserLibrary();
 
         console.log("User`s library Results:", results);
         // await MusicKit.setPlaybackQueue("pl.e35b41bd9acf48aeaddeb51dc91f2f76", MusicItem.PLAYLIST);

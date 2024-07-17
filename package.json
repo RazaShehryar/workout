@@ -21,6 +21,7 @@
     "@lomray/react-native-apple-music": "^1.2.1",
     "@react-native-picker/picker": "^2.7.5",
     "@react-navigation/native": "^6.0.2",
+    "axios": "^1.7.2",
     "expo": "~51.0.18",
     "expo-blur": "~13.0.2",
     "expo-build-properties": "~0.12.3",
@@ -55,5 +56,8 @@
     "react-test-renderer": "18.2.0",
     "typescript": "~5.3.3"
   },
-  "private": true
+  "private": true,
+  "resolutions": {
+    "@lomray/react-native-apple-music@^1.2.1": "patch:@lomray/react-native-apple-music@npm%3A1.2.1#./.yarn/patches/@lomray-react-native-apple-music-npm-1.2.1-304c66fad1.patch"
+  }
 }
