@@ -1,8 +1,8 @@
-import React, { FC, useCallback } from "react";
+import React, { FC, useCallback, useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 
-import { ISong, Player } from "@lomray/react-native-apple-music";
+import { ISong, MusicKit, Player } from "@lomray/react-native-apple-music";
 import Animated, { LinearTransition, SlideInRight, SlideOutRight } from "react-native-reanimated";
 import { DEFAULT_PLACEHOLDER, blurhash } from "@/constants";
 
@@ -11,7 +11,12 @@ type Props = {
 };
 
 export const SongList: FC<Props> = ({ songs }) => {
+  const [alreadySet, setAlreadySet] = useState(false);
   const playSong = async (item: ISong) => {
+    if (!alreadySet) {
+      await MusicKit.setLocalPlaybackQueueAll();
+      setAlreadySet(true);
+    }
     if (item.localId) {
       Player.playLocalSongInQueue(item.localId);
     }

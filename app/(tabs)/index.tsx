@@ -1,64 +1,27 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { View, Button, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, Image } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import Modal from "react-native-modal";
-import BottomSheet from "@gorhom/bottom-sheet";
 import { WorkoutData, createTable, getLatestWorkout, insertData } from "@/database";
 import { addMinutesToDate, capitalizeFirstLetter, locations, workoutType } from "@/utils";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import BottomSheet from "@gorhom/bottom-sheet";
+import { Picker } from "@react-native-picker/picker";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import Modal from "react-native-modal";
 
+import { AlbumList } from "@/components/AlbumList";
+import { MusicBar } from "@/components/MusicBar";
+import { SongList } from "@/components/SongList";
+import { LIBRARY_ITEMS } from "@/constants";
 import HealthKit, {
   HKQuantityTypeIdentifier,
   HKUnits,
-  HKWorkoutRouteTypeIdentifier,
-  HKWorkoutTypeIdentifier,
   UnitOfEnergy,
   UnitOfLength,
 } from "@kingstinct/react-native-healthkit";
-import {
-  Auth,
-  Player,
-  MusicKit,
-  useCurrentSong,
-  useIsPlaying,
-  CatalogSearchType,
-  MusicItem,
-  ISong,
-  AuthStatus,
-  useLocalIsPlaying,
-  useLocalCurrentSong,
-} from "@lomray/react-native-apple-music";
-import Animated, {
-  FadeIn,
-  FadeOut,
-  Layout,
-  LinearTransition,
-  SlideInLeft,
-  SlideInRight,
-  SlideOutRight,
-} from "react-native-reanimated";
-import { SongList } from "@/components/SongList";
-import { MusicBar } from "@/components/MusicBar";
-
-const items = [
-  {
-    title: "Playlists",
-    icon: <Ionicons name="musical-note-outline" size={32} color="red" style={{ paddingBottom: 6 }} />,
-  },
-  {
-    title: "Artists",
-    icon: <Ionicons name="mic-outline" size={32} color="red" style={{ paddingBottom: 6 }} />,
-  },
-  {
-    title: "Albums",
-    icon: <Ionicons name="albums-outline" size={32} color="red" style={{ paddingBottom: 6 }} />,
-  },
-  {
-    title: "Songs",
-    icon: <MaterialIcons name="queue-music" size={32} color="red" style={{ paddingBottom: 6 }} />,
-  },
-];
+import { Auth, AuthStatus, ISong, MusicKit, useLocalCurrentSong } from "@lomray/react-native-apple-music";
+import { IAlbum } from "@lomray/react-native-apple-music/types/album";
+import Animated, { LinearTransition, SlideInLeft, SlideOutRight } from "react-native-reanimated";
+import { AlbumSongs } from "@/components/AlbumSongs";
 
 const App = () => {
   const [isModalVisible, setModalVisible] = useState(false);
@@ -68,6 +31,8 @@ const App = () => {
   const [currentState, setCurrentState] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [songs, setSongs] = useState<ISong[]>([]);
+  const [albums, setAlbums] = useState<IAlbum[]>([]);
+  const [selectedAlbum, setSelectedAlbum] = useState<IAlbum | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [latestWorkout, setLatestWorkout] = useState<WorkoutData | null>(null);
   const [currentStepCount, setCurrentStepCount] = useState(100);
@@ -207,16 +172,29 @@ const App = () => {
   useEffect(() => {
     (async () => {
       if (authStatus === "authorized") {
-        if (currentState === "Songs") {
-          const result = await MusicKit.getUserLibrarySongs();
-          await MusicKit.setLocalPlaybackQueueAll();
-          if (result) {
-            setSongs(result.items);
-          }
+        const songsResponse = await MusicKit.getUserLibrarySongs();
+        await MusicKit.setLocalPlaybackQueueAll();
+        if (songsResponse) {
+          setSongs(songsResponse.items);
+        }
+        const albumsResponse = await MusicKit.getUserLibraryAlbums();
+        if (albumsResponse) {
+          setAlbums(albumsResponse.items);
         }
       }
     })();
-  }, [authStatus, currentState]);
+  }, [authStatus]);
+
+  const onSelectAlbum = async (item: IAlbum) => {
+    if (item.localId) {
+      setSelectedAlbum(item);
+      setCurrentState("AlbumSongs");
+    }
+  };
+
+  const onGoBack = () => {
+    setCurrentState((state) => (state === "AlbumSongs" ? "Albums" : ""));
+  };
 
   if (!isReady) {
     return null;
@@ -271,22 +249,20 @@ const App = () => {
         <View style={styles.bottomSheetContent}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             {currentState ? (
-              <Ionicons
-                name="arrow-back"
-                size={24}
-                color="black"
-                onPress={() => setCurrentState("")}
-                suppressHighlighting
-              />
+              <Ionicons name="arrow-back" size={24} color="black" onPress={onGoBack} suppressHighlighting />
             ) : (
               <View style={{ flex: 0.1 }} />
             )}
-            <Text style={styles.bottomSheetText}>{currentState || "Library"}</Text>
+            <Text style={styles.bottomSheetText}>{currentState === "AlbumSongs" ? "" : currentState || "Library"}</Text>
             <View style={{ flex: 0.1 }} />
           </View>
-          <View style={{ marginTop: 50, gap: 30 }}>
+          <View style={{ marginTop: 30, gap: 30 }}>
             {currentState === "Songs" ? (
               <SongList songs={songs} />
+            ) : currentState === "Albums" ? (
+              <AlbumList albums={albums} onSelectAlbum={onSelectAlbum} />
+            ) : currentState === "AlbumSongs" ? (
+              <AlbumSongs songs={songs} selectedAlbum={selectedAlbum} />
             ) : (
               <Animated.View
                 key="fede4"
@@ -294,7 +270,7 @@ const App = () => {
                 exiting={SlideOutRight}
                 style={{ gap: 30 }}
                 layout={LinearTransition.duration(250)}>
-                {items.map((item) => (
+                {LIBRARY_ITEMS.map((item) => (
                   <TouchableOpacity
                     onPress={() => setCurrentState(item.title)}
                     key={item.title}
