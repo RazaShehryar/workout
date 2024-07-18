@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { View, Button, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, Image } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import Modal from "react-native-modal";
@@ -27,6 +27,7 @@ import {
   ISong,
   AuthStatus,
   useLocalIsPlaying,
+  useLocalCurrentSong,
 } from "@lomray/react-native-apple-music";
 import Animated, {
   FadeIn,
@@ -38,6 +39,7 @@ import Animated, {
   SlideOutRight,
 } from "react-native-reanimated";
 import { SongList } from "@/components/SongList";
+import { MusicBar } from "@/components/MusicBar";
 
 const items = [
   {
@@ -67,14 +69,14 @@ const App = () => {
   const [isReady, setIsReady] = useState(false);
   const [songs, setSongs] = useState<ISong[]>([]);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
-  const [currentlyPlaying, setCurrentlyPlaying] = useState<ISong | null>(null);
   const [latestWorkout, setLatestWorkout] = useState<WorkoutData | null>(null);
   const [currentStepCount, setCurrentStepCount] = useState(100);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = ["1%", "50%", "90%"];
 
-  const { song } = useCurrentSong();
-  const { isPlaying } = useLocalIsPlaying();
+  const { song } = useLocalCurrentSong();
+
+  const currentlyPlaying = useMemo(() => songs.find((v) => v.localId === song?.id) || null, [songs, song?.id]);
 
   const fetchLatestWorkout = () => {
     getLatestWorkout((data) => {
@@ -204,15 +206,17 @@ const App = () => {
 
   useEffect(() => {
     (async () => {
-      if (currentState === "Songs" && authStatus === "authorized") {
-        const result = await MusicKit.getUserLibrarySongs();
-        await MusicKit.setLocalPlaybackQueueAll();
-        if (result) {
-          setSongs(result.items);
+      if (authStatus === "authorized") {
+        if (currentState === "Songs") {
+          const result = await MusicKit.getUserLibrarySongs();
+          await MusicKit.setLocalPlaybackQueueAll();
+          if (result) {
+            setSongs(result.items);
+          }
         }
       }
     })();
-  }, [currentState, authStatus]);
+  }, [authStatus, currentState]);
 
   if (!isReady) {
     return null;
@@ -315,6 +319,7 @@ const App = () => {
           {/* Add your music player content here */}
         </View>
       </BottomSheet>
+      <MusicBar currentlyPlaying={currentlyPlaying} />
     </View>
   );
 };

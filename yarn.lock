@@ -2064,11 +2064,11 @@ __metadata:
 
 "@lomray/react-native-apple-music@patch:@lomray/react-native-apple-music@npm%3A1.2.1#./.yarn/patches/@lomray-react-native-apple-music-npm-1.2.1-304c66fad1.patch::locator=workout%40workspace%3A.":
   version: 1.2.1
-  resolution: "@lomray/react-native-apple-music@patch:@lomray/react-native-apple-music@npm%3A1.2.1#./.yarn/patches/@lomray-react-native-apple-music-npm-1.2.1-304c66fad1.patch::version=1.2.1&hash=6dd23b&locator=workout%40workspace%3A."
+  resolution: "@lomray/react-native-apple-music@patch:@lomray/react-native-apple-music@npm%3A1.2.1#./.yarn/patches/@lomray-react-native-apple-music-npm-1.2.1-304c66fad1.patch::version=1.2.1&hash=b24eee&locator=workout%40workspace%3A."
   peerDependencies:
     react: "*"
     react-native: ">=0.61"
-  checksum: 0b3fb1dae99817451be8bf0fde06e18101f8fbb8fe9edce0adc04a20ebfe27155f9cb9e5770a1ea6fb835edbc3bc48cc863566c90c113c5edd7a81ef1e59eda9
+  checksum: 122aabee74de1c885967dd5c30af716d1d6d593fe38b1b60e7d294240e87870e3ec378c2b16b1ee13cfdddfe77259383446ffa796f71f335bb103db41e2fd03c
   languageName: node
   linkType: hard
 
@@ -5186,6 +5186,15 @@ __metadata:
   peerDependencies:
     expo: "*"
   checksum: 42968cceb60b9f5d1ef4fd29b243819e738588c8f51a8eb63750e21656f93be13d925982d8ef3b874da9145ebe4cd789da4d9d32bbd6577519ca0bfb214daa4b
+  languageName: node
+  linkType: hard
+
+"expo-image@npm:~1.12.13":
+  version: 1.12.13
+  resolution: "expo-image@npm:1.12.13"
+  peerDependencies:
+    expo: "*"
+  checksum: bd1a204dcdbe1b82aea55f850b8d565ec33469d3c2f323f4e84a620a34ccc79ec59ef5ae4d1ae7d9e559f185b45695d1ed23e87c5e9253365fef5d0a886c8735
   languageName: node
   linkType: hard
 
@@ -11586,6 +11595,7 @@ __metadata:
     expo-constants: ~16.0.2
     expo-dev-client: ~4.0.19
     expo-font: ~12.0.7
+    expo-image: ~1.12.13
     expo-linking: ~6.3.1
     expo-router: ~3.5.17
     expo-sensors: ~13.0.9
