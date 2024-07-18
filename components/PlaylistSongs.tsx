@@ -1,40 +1,33 @@
-import React, { FC, useCallback, useMemo, useState } from "react";
-import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
+import React, { FC, useCallback, useState } from "react";
+import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { ISong, MusicItem, MusicKit, Player } from "@lomray/react-native-apple-music";
-import Animated, { LinearTransition, SlideInRight, SlideOutRight } from "react-native-reanimated";
 import { DEFAULT_PLACEHOLDER, blurhash } from "@/constants";
-import { IAlbum } from "@lomray/react-native-apple-music/types/album";
+import { ISong, MusicItem, MusicKit, Player } from "@lomray/react-native-apple-music";
+import { IPlaylist } from "@lomray/react-native-apple-music/types/playlist";
+import Animated, { LinearTransition, SlideInRight, SlideOutRight } from "react-native-reanimated";
 
 type Props = {
   songs: ISong[];
-  selectedAlbum: IAlbum | null;
+  selectedPlaylist: IPlaylist | null;
 };
 
 const { width, height } = Dimensions.get("window");
 
-export const AlbumSongs: FC<Props> = ({ songs, selectedAlbum }) => {
+export const PlaylistSongs: FC<Props> = ({ songs, selectedPlaylist }) => {
   const [alreadySet, setAlreadySet] = useState(false);
 
   const playSong = async (item: ISong) => {
-    if (selectedAlbum?.localId && !alreadySet) {
+    if (selectedPlaylist?.localId && !alreadySet) {
       setAlreadySet(true);
-      await MusicKit.setLocalPlaybackQueue(selectedAlbum.localId, MusicItem.ALBUM);
+
+      await MusicKit.setLocalPlaybackQueue(selectedPlaylist.localId, MusicItem.PLAYLIST);
     }
 
     if (item.localId) {
       Player.playLocalSongInQueue(item.localId);
     }
   };
-
-  const filteredSongs = useMemo(
-    () =>
-      songs
-        .filter((v) => v.albumId === selectedAlbum?.localId)
-        .sort((a, b) => (a.localId || "").localeCompare(b.localId || "")),
-    [songs, selectedAlbum?.localId]
-  );
 
   const renderItem = useCallback(
     ({ item, index }: { item: ISong; index: number }) => (
@@ -56,7 +49,7 @@ export const AlbumSongs: FC<Props> = ({ songs, selectedAlbum }) => {
 
   const keyExtractor = useCallback((item: ISong) => item.id, []);
 
-  if (!selectedAlbum) {
+  if (!selectedPlaylist) {
     return null;
   }
   return (
@@ -71,21 +64,18 @@ export const AlbumSongs: FC<Props> = ({ songs, selectedAlbum }) => {
           <View style={{ alignItems: "center", gap: 10 }}>
             <Image
               style={styles.coverImage}
-              source={{ uri: selectedAlbum.artworkUrl || DEFAULT_PLACEHOLDER }}
+              source={{ uri: selectedPlaylist.artworkUrl || DEFAULT_PLACEHOLDER }}
               placeholder={{ blurhash }}
               contentFit="cover"
               transition={1000}
             />
             <Text numberOfLines={1} style={styles.albumTitle}>
-              {selectedAlbum.title}
-            </Text>
-            <Text numberOfLines={1} style={styles.artistName}>
-              {selectedAlbum.artistName}
+              {selectedPlaylist.title}
             </Text>
           </View>
         }
         contentContainerStyle={styles.contentContainerStyle}
-        data={filteredSongs}
+        data={songs}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
       />

@@ -6,10 +6,12 @@ import { ISong, Player } from "@lomray/react-native-apple-music";
 import Animated, { LinearTransition, SlideInRight, SlideOutRight } from "react-native-reanimated";
 import { DEFAULT_PLACEHOLDER, blurhash } from "@/constants";
 import { IAlbum } from "@lomray/react-native-apple-music/types/album";
+import { IArtist } from "@lomray/react-native-apple-music/types/artist";
 
 type Props = {
   albums: IAlbum[];
   onSelectAlbum: (value: IAlbum) => void;
+  selectedArtist: IArtist | null;
 };
 
 const { width, height } = Dimensions.get("window");

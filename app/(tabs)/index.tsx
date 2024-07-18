@@ -22,6 +22,11 @@ import { Auth, AuthStatus, ISong, MusicKit, useLocalCurrentSong } from "@lomray/
 import { IAlbum } from "@lomray/react-native-apple-music/types/album";
 import Animated, { LinearTransition, SlideInLeft, SlideOutRight } from "react-native-reanimated";
 import { AlbumSongs } from "@/components/AlbumSongs";
+import { IArtist } from "@lomray/react-native-apple-music/types/artist";
+import { ArtistList } from "@/components/ArtistList";
+import { IPlaylist } from "@lomray/react-native-apple-music/types/playlist";
+import { PlaylistList } from "@/components/PlaylistList";
+import { PlaylistSongs } from "@/components/PlaylistSongs";
 
 const App = () => {
   const [isModalVisible, setModalVisible] = useState(false);
@@ -31,8 +36,14 @@ const App = () => {
   const [currentState, setCurrentState] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [songs, setSongs] = useState<ISong[]>([]);
+  const [dupAlbums, setDupAlbums] = useState<IAlbum[]>([]);
   const [albums, setAlbums] = useState<IAlbum[]>([]);
+  const [artists, setArtists] = useState<IArtist[]>([]);
+  const [playlists, setPlaylists] = useState<IPlaylist[]>([]);
+  const [playlistSongs, setPlaylistSongs] = useState<ISong[]>([]);
+  const [selectedArtist, setSelectedArtist] = useState<IArtist | null>(null);
   const [selectedAlbum, setSelectedAlbum] = useState<IAlbum | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<IPlaylist | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [latestWorkout, setLatestWorkout] = useState<WorkoutData | null>(null);
   const [currentStepCount, setCurrentStepCount] = useState(100);
@@ -46,7 +57,6 @@ const App = () => {
   const fetchLatestWorkout = () => {
     getLatestWorkout((data) => {
       if (data) {
-        console.log("this is the data ", data);
         setLatestWorkout(data);
       } else {
         console.log("No workout data found");
@@ -146,10 +156,8 @@ const App = () => {
       const workoutResult = await HealthKit.saveWorkoutSample(workoutType(type), [], new Date(), workoutOptions);
 
       if (workoutResult) {
-        console.log("workout created: ", workoutResult);
         const workoutRouteResult = await HealthKit.saveWorkoutRoute(workoutResult, locations);
         if (workoutRouteResult) {
-          console.log("workout route created");
           insertData({ ...options, id: workoutResult } as unknown as WorkoutData, fetchLatestWorkout);
           setDistance("");
           setCalories("");
@@ -180,6 +188,15 @@ const App = () => {
         const albumsResponse = await MusicKit.getUserLibraryAlbums();
         if (albumsResponse) {
           setAlbums(albumsResponse.items);
+          setDupAlbums(albumsResponse.items);
+        }
+        const artistsResponse = await MusicKit.getUserLibraryArtists();
+        if (artistsResponse) {
+          setArtists(artistsResponse.items);
+        }
+        const playlistsResponse = await MusicKit.getUserLibraryPlaylists();
+        if (playlistsResponse) {
+          setPlaylists(playlistsResponse.items);
         }
       }
     })();
@@ -192,8 +209,30 @@ const App = () => {
     }
   };
 
+  const onSelectArtist = async (item: IArtist) => {
+    if (item.localId) {
+      setDupAlbums((items) => items.filter((v) => v.artistId === item.localId));
+      setSelectedArtist(item);
+      setCurrentState("Albums");
+    }
+  };
+
+  const onSelectPlaylist = async (item: IPlaylist) => {
+    if (item.localId) {
+      setSelectedPlaylist(item);
+      const result = await MusicKit.getUserLibraryPlaylistSongs(item.id);
+      if (result) {
+        setPlaylistSongs(result.items);
+      }
+      setCurrentState("PlaylistSongs");
+    }
+  };
+
   const onGoBack = () => {
-    setCurrentState((state) => (state === "AlbumSongs" ? "Albums" : ""));
+    setCurrentState((state) => {
+      const result = state === "AlbumSongs" ? "Albums" : state === "PlaylistSongs" ? "Playlists" : "";
+      return result;
+    });
   };
 
   if (!isReady) {
@@ -253,16 +292,24 @@ const App = () => {
             ) : (
               <View style={{ flex: 0.1 }} />
             )}
-            <Text style={styles.bottomSheetText}>{currentState === "AlbumSongs" ? "" : currentState || "Library"}</Text>
+            <Text style={styles.bottomSheetText}>
+              {["AlbumSongs", "PlaylistSongs"].includes(currentState) ? "" : currentState || "Library"}
+            </Text>
             <View style={{ flex: 0.1 }} />
           </View>
           <View style={{ marginTop: 30, gap: 30 }}>
             {currentState === "Songs" ? (
               <SongList songs={songs} />
             ) : currentState === "Albums" ? (
-              <AlbumList albums={albums} onSelectAlbum={onSelectAlbum} />
+              <AlbumList albums={dupAlbums} onSelectAlbum={onSelectAlbum} selectedArtist={selectedArtist} />
             ) : currentState === "AlbumSongs" ? (
               <AlbumSongs songs={songs} selectedAlbum={selectedAlbum} />
+            ) : currentState === "Artists" ? (
+              <ArtistList artists={artists} onSelectArtist={onSelectArtist} />
+            ) : currentState === "Playlists" ? (
+              <PlaylistList playlists={playlists} onSelectPlaylist={onSelectPlaylist} />
+            ) : currentState === "PlaylistSongs" ? (
+              <PlaylistSongs songs={playlistSongs} selectedPlaylist={selectedPlaylist} />
             ) : (
               <Animated.View
                 key="fede4"
@@ -272,7 +319,12 @@ const App = () => {
                 layout={LinearTransition.duration(250)}>
                 {LIBRARY_ITEMS.map((item) => (
                   <TouchableOpacity
-                    onPress={() => setCurrentState(item.title)}
+                    onPress={() => {
+                      setCurrentState(item.title);
+                      if (item.title === "Albums") {
+                        setDupAlbums(albums);
+                      }
+                    }}
                     key={item.title}
                     style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
