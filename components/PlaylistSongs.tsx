@@ -1,9 +1,9 @@
 import { Image } from "expo-image";
-import React, { FC, useCallback, useState } from "react";
+import React, { FC, useCallback, useEffect, useRef, useState } from "react";
 import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { DEFAULT_PLACEHOLDER, blurhash } from "@/constants";
-import { ISong, MusicItem, MusicKit, Player } from "@lomray/react-native-apple-music";
+import { ISong, MusicItem, MusicKit, Player, useCurrentSong } from "@lomray/react-native-apple-music";
 import { IPlaylist } from "@lomray/react-native-apple-music/types/playlist";
 import Animated, { LinearTransition, SlideInRight, SlideOutRight } from "react-native-reanimated";
 
@@ -17,7 +17,27 @@ const { width, height } = Dimensions.get("window");
 export const PlaylistSongs: FC<Props> = ({ songs, selectedPlaylist }) => {
   const [alreadySet, setAlreadySet] = useState(false);
 
-  const playSong = async (item: ISong) => {
+  const currentPlaying = useRef(0);
+
+  useEffect(() => {
+    // Listen for playback state changes
+    const playbackListener = Player.addListener("onPlaybackStateChange", async (state) => {
+      if (state?.playbackStatus === "stopped") {
+        const nextItem = songs.find((_value, ind) => ind === currentPlaying.current + 1);
+        if (nextItem?.id && !nextItem?.localId) {
+          await MusicKit.setPlaybackQueue(nextItem.id, MusicItem.SONG);
+          Player.play();
+          currentPlaying.current = currentPlaying.current + 1;
+        }
+      }
+    });
+
+    return () => {
+      playbackListener.remove();
+    };
+  }, []);
+
+  const playSong = async (item: ISong, index: number) => {
     if (selectedPlaylist?.localId && !alreadySet) {
       setAlreadySet(true);
 
@@ -26,12 +46,16 @@ export const PlaylistSongs: FC<Props> = ({ songs, selectedPlaylist }) => {
 
     if (item.localId) {
       Player.playLocalSongInQueue(item.localId);
+    } else {
+      await MusicKit.setPlaybackQueue(item.id, MusicItem.SONG);
+      Player.play();
     }
+    currentPlaying.current = index;
   };
 
   const renderItem = useCallback(
     ({ item, index }: { item: ISong; index: number }) => (
-      <TouchableOpacity onPress={() => playSong(item)} style={styles.itemContainer}>
+      <TouchableOpacity onPress={() => playSong(item, index)} style={styles.itemContainer}>
         <View style={{ flex: 1 }}>
           <View style={styles.itemContainer}>
             <Text style={[styles.itemTitle, { color: "gray" }]}>{index + 1}</Text>
